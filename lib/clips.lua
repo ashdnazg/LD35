@@ -1,7 +1,7 @@
 local clips = {
 	[1] = {'T','You can use science to distinguish between humans and shapeshifters,\nso they must oppose science and the scientific method.'},
 	[2] = {'T','I don\'t understand how he was invited into our group in the first place,\nforget shapeshifting, the guy can barely talk.'},
-	[3] = {'T','But can we understand you? Without the subtitles...'},
+	[3] = {'T','But can we understand you without the subtitles...'},
 	[4] = {'T','I rest my case'},
 	[5] = {'T','He\'s a nice guy, his new age stuff can be annoying but harmless really.'},
 	[6] = {'T','What kind of question is this? Is this a job interview?\nWell I\'m a team player and my main weakness is perfectionism'},

@@ -131,10 +131,15 @@ local transitions = {
 		target = 'groupask',
 	},
 	howcanweknow = {
+		caption = "How can we know if someone is a Shapeshifter?",
 		clips = {18, 23, 41, 19},
 		target = 'main',
 	},
 	isittommy = {
+		caption = "Is Tommy the shapeshifter?",
+		clips = {14},
+		tommyState = 1,
+		target = 'isittommy'
 	},
 	backtomain = {
 		target = 'main',
@@ -142,14 +147,17 @@ local transitions = {
 	},
 
 	talktommy = {
+		caption = 'Tommy',
 		actor = 'tommy',
 		target = 'talk2',
 	},
 	talkbobby = {
+		caption = 'Bobby',
 		actor = 'bobby',
 		target = 'talk2',
 	},
 	talkmike = {
+		caption = 'Mike',
 		actor = 'mike',
 		target = 'talk2',
 	},
@@ -181,6 +189,18 @@ local transitions = {
 	accusemike = {
 		caption = 'Mike',
 	},
+	tellyou = {
+		caption = 'Yourself',
+	},
+	telltommy = {
+		caption = 'Tommy',
+	},
+	tellbobby = {
+		caption = 'Bobby',
+	},
+	tellmike = {
+		caption = 'Mike',
+	},
 	ask = {
 		caption = 'Who do you think the shapeshifter is?',
 		target = 'talk2',
@@ -193,8 +213,8 @@ local transitions = {
 local states = {
 	main = {
 		'groupask',
-		'blame',
 		'talk',
+		'blame',
 	},
 	groupask = {
 		'howcanweknow',
@@ -232,11 +252,98 @@ local states = {
 	},
 	accuse2 = {
 		dynamic = true,
+	},
+	isittommy = {
+		dynamic = true
 	}
 }
 
-function Game:tell()
+local tommyTransitions = {
+	{
+		caption = "Are we sure it's not Tommy?",
+		clips = {63},
+	},
+	{
+		caption = "Are we really sure it’s Tommy?",
+		clips = {64},
+	},
+	{
+		caption = "All signs seem to point that Tommy is the Shapeshifter",
+		clips = {55},
+	},
+	{
+		caption = "So it must be Tommy",
+		clips = {15},
+	},
+	{
+		caption = "Tommy",
+		clips = {16},
+	},
+	{
+		caption = "Tommy",
+		clips = {63},
+	},
+	{
+		caption = "Tommy",
+		clips = {50},
+	},
+	{
+		caption = "But what if it isn't Tommy?",
+		clips = {44},
+	},
+	{
+		caption = "Maybe it's like when we killed Fred the other week thinking he was a werewolf?",
+		clips = {81, 65},
+	},
+	{
+		caption = "No, there is no shapeshifter!",
+		clips = {7, 61},
+	},
+}
 
+
+function Game:isittommy()
+	self.currentOptions = {'nexttommy', 'back'}
+	local currentTommy = self.tommyState
+	if currentTommy > #tommyTransitions then
+		self.endsReached.good = true
+		self:advanceToEndgame()
+		return
+	end
+
+	transitions['nexttommy'] = tommyTransitions[currentTommy]
+	transitions['nexttommy'].tommyState = currentTommy + 1
+	transitions['nexttommy'].target = 'isittommy'
+
+	transitions['back'] = {
+		caption = 'back',
+		tommyState = 1,
+		target = 'main',
+	}
+end
+
+
+function Game:tell()
+	local myTell = tellAbout[self.actor]
+	self.currentOptions = {}
+
+	for k, v in pairs({'tommy', 'bobby', 'mike'}) do
+		--terrible hack
+		local transitionName
+		if self.actor ~= v then
+			transitionName = 'tell' .. v
+		else
+			transitionName = 'tellyou'
+		end
+		self.currentOptions[#self.currentOptions + 1] = transitionName
+		transitions[transitionName].clips = tellAbout[self.actor][v]
+		transitions[transitionName].target = 'talk2'
+	end
+	transitions['back'] = {
+		caption = 'back',
+		target = 'talk2',
+	}
+	self.currentOptions[#self.currentOptions + 1] = 'back'
 end
 
 function Game:talk2()
@@ -314,6 +421,9 @@ function Game:startTransition(transitionName)
 	end
 	if transition.actor ~= nil then
 		self.actor = transition.actor
+	end
+	if transition.tommyState ~= nil then
+		self.tommyState = transition.tommyState
 	end
 	self.accusee = transition.accusee
 	self.nextState = transition.target
@@ -403,7 +513,7 @@ function Game:keyPress(key)
 
 	local i = tonumber(key)
 	local options = self.currentOptions
-	if options[i] then
+	if options and options[i] then
 		self:startTransition(options[i])
 	end
 end
