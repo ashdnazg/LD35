@@ -2,16 +2,16 @@ math.randomseed(os.time())
 math.random()
 
 require 'lib/game'
-require 'lib/clips'
 require 'lib/endgame'
 
 local endsReached = {
-	'Tommy' = false,
-	'Bobby' = false,
-	'Mike' = false,
-	'Good' = false,
-	'Bad' = false,
+	Tommy = false,
+	Bobby = false,
+	Mike = false,
+	Good = false,
+	Bad = false,
 }
+
 local state, game, endgame
 
 
