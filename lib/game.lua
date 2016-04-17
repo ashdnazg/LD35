@@ -52,7 +52,7 @@ local accusations = {
 				["Look in his soul"] = {false, 40},
 				["Listen to his spirit"] = {false, 40},
 			},
-			response = {36},
+			response = {37},
 		},
 		mike = {
 			agree = {29},
@@ -89,6 +89,29 @@ local accusations = {
 	}
 }
 
+local knowledge = {
+	tommy = {1},
+	mike = {24},
+	bobby = {47},
+}
+
+local tellAbout = {
+	tommy = {
+		tommy = {6},
+		bobby = {2, 42, 3, 43, 4},
+		mike = {5},
+	},
+	bobby = {
+		tommy = {48, 22},
+		bobby = {50},
+		mike = {49, 38},
+	},
+	mike = {
+		tommy = {25, 20, 26},
+		bobby = {27},
+		mike = {28},
+	}
+}
 
 local transitions = {
 	start = {
@@ -112,58 +135,31 @@ local transitions = {
 		target = 'main',
 	},
 	isittommy = {
-		clips
 	},
 	backtomain = {
 		target = 'main',
 		actor = false,
 	},
-	blametommy = {
-
-	},
-	blamemmike = {
-
-	},
-	blamebobby = {
-
-	},
 
 	talktommy = {
 		actor = 'tommy',
-		target = 'talktommy',
+		target = 'talk2',
 	},
 	talkbobby = {
 		actor = 'bobby',
-		target = 'talktommy',
+		target = 'talk2',
 	},
 	talkmike = {
 		actor = 'mike',
-		target = 'talktommy',
+		target = 'talk2',
 	},
-
-	tommyknow = {
+	know = {
 		caption = 'What do you know about Shapeshifters?',
-		clips = {1},
-		target = 'talktommy',
+		target = 'talk2',
 	},
-	tommytell = {
+	tell = {
 		caption = 'What can you tell me about...',
-		target = 'tommytell',
-	},
-	tommytelltommy = {
-		caption = 'Yourself',
-		clips = {6},
-		target = 'tommytell',
-	},
-	tommytellbobby = {
-		caption = 'Bobby',
-		clips = {2, 42, 3, 43, 4},
-		target = 'tommytell',
-	},
-	tommytellmike = {
-		caption = 'Mike',
-		clips = {5},
-		target = 'tommytell',
+		target = 'tell',
 	},
 	backtalktommy = {
 		caption = 'back...',
@@ -184,6 +180,10 @@ local transitions = {
 	},
 	accusemike = {
 		caption = 'Mike',
+	},
+	ask = {
+		caption = 'Who do you think the shapeshifter is?',
+		target = 'talk2',
 	},
 }
 
@@ -213,25 +213,44 @@ local states = {
 		'talkbobby',
 		'backtomain',
 	},
-	talktommy = {
-		'tommyknow',
-		'tommytell',
-		'accuse',
-		'tommyask',
+	talk2 = {
+		dynamic = true,
+		-- 'tommyknow',
+		-- 'tommytell',
+		-- 'accuse',
+		-- 'ask',
 	},
-	tommytell = {
-		'tommytelltommy',
-		'tommytellbobby',
-		'tommytellmike',
-		'backtalktommy',
+	tell = {
+		dynamic = true,
+		-- 'tommytelltommy',
+		-- 'tommytellbobby',
+		-- 'tommytellmike',
+		-- 'backtalktommy',
 	},
 	accuse = {
 		dynamic = true,
 	},
 	accuse2 = {
 		dynamic = true,
-	},
+	}
 }
+
+function Game:tell()
+
+end
+
+function Game:talk2()
+	self.currentOptions = {"know", "tell", "accuse", "ask"}
+	transitions['know'].clips = knowledge[self.actor]
+	transitions['ask'].clips = accusations[self.actor][self.accusations[self.actor]].response
+	transitions['back'] = {
+		caption = 'back',
+		target = 'talk',
+		actor = false,
+	}
+	self.currentOptions[#self.currentOptions + 1] = 'back'
+end
+
 
 function Game:accuse2()
 	self.currentOptions = {"opt1", "opt2", "opt3", "opt4"}
@@ -245,13 +264,16 @@ function Game:accuse2()
 		transitions['opt' .. i] = {
 			caption = caption,
 			clips = clips,
-			target = 'talk' .. self.actor,
+			target = 'talk2',
 			changeMind = data[1],
 		}
 		i = i + 1
 	end
-
-	self.currentOptions[#self.currentOptions + 1] = 'backtalk' .. self.actor
+	transitions['back'] = {
+		caption = 'back',
+		target = 'talk2',
+	}
+	self.currentOptions[#self.currentOptions + 1] = 'back'
 end
 
 function Game:accuse()
@@ -273,11 +295,15 @@ function Game:accuse()
 			transitions[transitionName].accusee = v
 		else
 			transitions[transitionName].clips = self.accusations[self.actor] == v and myAccusations[v].agree or myAccusations[v].disagree
-			transitions[transitionName].target = 'talk' .. self.actor
+			transitions[transitionName].target = 'talk2'
 			transitions[transitionName].accusee = nil
 		end
 	end
-	self.currentOptions[#self.currentOptions + 1] = 'backtalk' .. self.actor
+	transitions['back'] = {
+		caption = 'back',
+		target = 'talk2',
+	}
+	self.currentOptions[#self.currentOptions + 1] = 'back'
 end
 
 
