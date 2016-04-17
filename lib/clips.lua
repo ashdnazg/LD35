@@ -79,7 +79,7 @@ local clips = {
 	[78] = {'M','Feels like I\'ve already heard this'},
 	[79] = {'M','Bobby what\'s your truth?'},
 	[80] = {'T','And if the telly told you to jump off a cliff?'},
-	[81] = ('M','Yeah, it was just a fake telly story to distract us from the government corruption'),
+	[81] = {'M','Yeah, it was just a fake telly story to distract us from the government corruption'},
 }
 
 local currentSource

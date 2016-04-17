@@ -173,6 +173,18 @@ local transitions = {
 		caption = 'I think the Shapeshifter is...',
 		target = 'accuse',
 	},
+	accuseyou = {
+		caption = 'You',
+	},
+	accusetommy = {
+		caption = 'Tommy',
+	},
+	accusebobby = {
+		caption = 'Bobby',
+	},
+	accusemike = {
+		caption = 'Mike',
+	},
 }
 
 
@@ -214,18 +226,88 @@ local states = {
 		'backtalktommy',
 	},
 	accuse = {
-		func = accuse,
+		dynamic = true,
+	},
+	accuse2 = {
+		dynamic = true,
 	},
 }
 
+function Game:accuse2()
+	self.currentOptions = {"opt1", "opt2", "opt3", "opt4"}
+	local options = accusations[self.actor][self.accusee].options
+	local i = 1
+	for caption, data in pairs(options) do
+		local clips = {}
+		for j = 2,#data do
+			clips[j-1] = data[j]
+		end
+		transitions['opt' .. i] = {
+			caption = caption,
+			clips = clips,
+			target = 'talk' .. self.actor,
+			changeMind = data[1],
+		}
+		i = i + 1
+	end
 
-local i = 1
+	self.currentOptions[#self.currentOptions + 1] = 'backtalk' .. self.actor
+end
+
+function Game:accuse()
+	local myAccusations = accusations[self.actor]
+	self.currentOptions = {}
+
+	for k, v in pairs({'tommy', 'bobby', 'mike'}) do
+		--terrible hack
+		local transitionName
+		if self.actor ~= v then
+			transitionName = 'accuse' .. v
+		else
+			transitionName = 'accuseyou'
+		end
+		self.currentOptions[#self.currentOptions + 1] = transitionName
+		if myAccusations[v].ask then
+			transitions[transitionName].clips = myAccusations[v].ask
+			transitions[transitionName].target = 'accuse2'
+			transitions[transitionName].accusee = v
+		else
+			transitions[transitionName].clips = self.accusations[self.actor] == v and myAccusations[v].agree or myAccusations[v].disagree
+			transitions[transitionName].target = 'talk' .. self.actor
+			transitions[transitionName].accusee = nil
+		end
+	end
+	self.currentOptions[#self.currentOptions + 1] = 'backtalk' .. self.actor
+end
+
+
 function Game:startTransition(transitionName)
 	local transition = transitions[transitionName]
+	if transition.changeMind then
+		self.accusations[self.actor] = self.accusee
+	end
+	if transition.actor ~= nil then
+		self.actor = transition.actor
+	end
+	self.accusee = transition.accusee
 	self.nextState = transition.target
 	self.currentClips = transition.clips or {}
 	self.currentClip = 0
+	self.currentOptions = nil
 	self:Skip()
+end
+
+function Game:NextState()
+	self.currentClips = nil
+	self.currentClip = nil
+	self.currentState = self.nextState
+	self.nextState = nil
+
+	if states[self.currentState].dynamic then
+		self[self.currentState](self)
+	else
+		self.currentOptions = states[self.currentState]
+	end
 end
 
 function Game:initialize(endsReached, advanceToEndgame)
@@ -240,6 +322,7 @@ function Game:start()
 	self.currentClip = nil
 	self.currentState = nil
 	self.nextState = nil
+	self.currentOptions = nil
 	self.accusations = {
 		tommy = 'bobby',
 		mike = 'mike',
@@ -254,7 +337,7 @@ function Game:draw()
 		love.graphics.print(self.caption, 20, 48)
 		return
 	end
-	local options = states[self.currentState]
+	local options = self.currentOptions
 	local y = 48
 	for i, option in pairs(options) do
 		local caption = transitions[option] and transitions[option].caption or option
@@ -265,13 +348,6 @@ end
 
 function Game:update(dt)
 
-end
-
-function Game:NextState()
-	self.currentClips = nil
-	self.currentClip = nil
-	self.currentState = self.nextState
-	self.nextState = nil
 end
 
 function Game:switchToClip(id)
@@ -300,7 +376,7 @@ function Game:keyPress(key)
 	end
 
 	local i = tonumber(key)
-	local options = states[self.currentState]
+	local options = self.currentOptions
 	if options[i] then
 		self:startTransition(options[i])
 	end
