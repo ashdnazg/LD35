@@ -67,7 +67,7 @@ local accusations = {
 				["He's annoying"] = {false, 62},
 				["He's obnoxious"] = {false, 62},
 				["Why are you arguing?"] = {false, 62},
-				["The telly!"] = {true, 40},
+				["The telly!"] = {true, 55},
 			},
 			response = {59, 80, 60},
 		},
@@ -142,6 +142,7 @@ local transitions = {
 		target = 'isittommy'
 	},
 	backtomain = {
+		caption = 'back',
 		target = 'main',
 		actor = false,
 	},
@@ -189,6 +190,15 @@ local transitions = {
 	accusemike = {
 		caption = 'Mike',
 	},
+	blametommy = {
+		caption = 'Tommy',
+	},
+	blamebobby = {
+		caption = 'Bobby',
+	},
+	blamemike = {
+		caption = 'Mike',
+	},
 	tellyou = {
 		caption = 'Yourself',
 	},
@@ -222,10 +232,14 @@ local states = {
 		'backtomain',
 	},
 	blame = {
-		'blametommy',
-		'blamemike',
-		'blamebobby',
-		'backtomain',
+		dynamic = true,
+		-- 'blametommy',
+		-- 'blamemike',
+		-- 'blamebobby',
+		-- 'backtomain',
+	},
+	blame2 = {
+		dynamic = true,
 	},
 	talk = {
 		'talktommy',
@@ -302,6 +316,53 @@ local tommyTransitions = {
 }
 
 
+function Game:blame2()
+
+end
+
+function Game:blame()
+	self.currentOptions = {'blametommy', 'blamebobby', 'blamemike', 'back'}
+	for _, v in pairs({'tommy', 'bobby', 'mike'}) do
+		local clips = {}
+		local transitionName = 'blame' .. v
+		local canBlame = self.accusations.tommy == v and self.accusations.bobby == v and self.accusations.mike == v
+		local clips
+		if canBlame then
+			clips = {72, 71, 69}
+			if v == "bobby" then
+				clips[#clips + 1] = 70
+			end
+			clips[#clips + 1] = 73
+		else
+			clips = {}
+			if self.accusations.tommy ~= v then
+				clips[#clips + 1] = 21
+			end
+			if self.accusations.mike ~= v then
+				clips[#clips + 1] = 40
+			end
+			if self.accusations.bobby ~= v then
+				clips[#clips + 1] = 62
+			end
+			clips[#clips + 1] = 68
+			clips[#clips + 1] = 39
+			clips[#clips + 1] = 67
+			clips[#clips + 1] = 69
+			clips[#clips + 1] = 66
+		end
+		transitions[transitionName].clips = clips
+		transitions[transitionName].endType = canBlame and v or 'bad'
+	end
+
+
+	transitions['back'] = {
+		caption = 'back',
+		tommyState = 1,
+		target = 'main',
+	}
+end
+
+
 function Game:isittommy()
 	self.currentOptions = {'nexttommy', 'back'}
 	local currentTommy = self.tommyState
@@ -327,7 +388,7 @@ function Game:tell()
 	local myTell = tellAbout[self.actor]
 	self.currentOptions = {}
 
-	for k, v in pairs({'tommy', 'bobby', 'mike'}) do
+	for _, v in pairs({'tommy', 'bobby', 'mike'}) do
 		--terrible hack
 		local transitionName
 		if self.actor ~= v then
@@ -425,6 +486,9 @@ function Game:startTransition(transitionName)
 	if transition.tommyState ~= nil then
 		self.tommyState = transition.tommyState
 	end
+	if transition.endType then
+		self.endsReached[transition.endType] = true
+	end
 	self.accusee = transition.accusee
 	self.nextState = transition.target
 	self.currentClips = transition.clips or {}
@@ -438,6 +502,10 @@ function Game:NextState()
 	self.currentClip = nil
 	self.currentState = self.nextState
 	self.nextState = nil
+	if not self.currentState then
+		self:advanceToEndgame()
+		return
+	end
 
 	if states[self.currentState].dynamic then
 		self[self.currentState](self)
