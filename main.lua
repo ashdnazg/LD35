@@ -29,6 +29,10 @@ local function advanceToEndgame()
 end
 
 local function init()
+	local music = love.audio.newSource("assets/music.ogg", "stream")
+	music:setVolume(0.2)
+	music:setLooping(true)
+	music:play()
     state = 'ingame'
     game = Game:new(endsReached, advanceToEndgame)
     endgame = Endgame:new(endsReached, advanceToGame)

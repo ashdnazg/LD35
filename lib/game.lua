@@ -517,6 +517,13 @@ end
 function Game:initialize(endsReached, advanceToEndgame)
 	self.advanceToEndgame = advanceToEndgame
 	self.endsReached = endsReached
+	self.images = {
+		B = love.graphics.newImage("assets/img/bobby.png"),
+		M = love.graphics.newImage("assets/img/mike.png"),
+		T = love.graphics.newImage("assets/img/tommy.png"),
+		A = love.graphics.newImage("assets/img/telly.png"),
+		default = love.graphics.newImage("assets/img/all.png"),
+	}
 end
 
 function Game:start()
@@ -537,12 +544,20 @@ function Game:start()
 end
 
 function Game:draw()
+	local t = {
+		tommy = 'T',
+		bobby = 'B',
+		mike = 'M',
+	}
+	local talking = self.talking or (self.actor and t[self.actor]) or ''
+	local image = self.images[talking] or self.images.default
+	love.graphics.draw(image)
 	if self.caption then
-		love.graphics.print(self.caption, 20, 48)
+		love.graphics.print(self.caption, 20, 405)
 		return
 	end
 	local options = self.currentOptions
-	local y = 48
+	local y = 405
 	for i, option in pairs(options) do
 		local caption = transitions[option] and transitions[option].caption or option
 		love.graphics.print("" .. i .. ") " .. caption, 20, y)
